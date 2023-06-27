@@ -9,12 +9,14 @@
 
 reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
+# expand function: wait for all wildcards runs finished
+
 rule all:
     input:
         expand("../../../mag_generate/fastp/{reads}_1_paired.fq.gz", reads=reads_id),
         expand("../../../mag_generate/fastp/{reads}_2_paired.fq.gz", reads=reads_id),
-        expand("../../../mag_generate/fastp/{reads}_1_unpaired.fq.gz", reads=reads_id),
-        expand("../../../mag_generate/fastp/{reads}_2_unpaired.fq.gz", reads=reads_id)
+        rna="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_rna_from_genomic.fna.gz",
+        cds="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_cds_from_genomic.fna.gz"
 
 rule fastp_qc:
     input: 
@@ -44,4 +46,30 @@ rule fastp_qc:
             -q 20 -u 20 -g -c -W 5 -3 -l 50 \
             -j ../../../mag_generate/fastp_report/{wildcards.reads} \
             -h ../../../mag_generate/fastp_report/{wildcards.reads}
+        """
+
+rule download_hum_cds:
+    output:
+        cds="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_cds_from_genomic.fna.gz"
+    params:
+        mem="5G",
+        outdir="../../../mag_generate/download_hum_ref"
+    threads: 1
+    shell:
+        """
+        mkdir -p {params.outdir} &&
+        wget -P {params.outdir} https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_cds_from_genomic.fna.gz
+        """
+
+rule download_hum_rna:
+    output:
+        rna="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_rna_from_genomic.fna.gz"
+    params:
+        mem="5G",
+        outdir="../../../mag_generate/download_hum_ref"
+    threads: 1
+    shell:
+        """
+        mkdir -p {params.outdir} &&
+        wget -P {params.outdir} https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_rna_from_genomic.fna.gz
         """
