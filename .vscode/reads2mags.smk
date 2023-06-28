@@ -15,8 +15,7 @@ rule all:
     input:
         expand("../../../mag_generate/fastp/{reads}_1_paired.fq.gz", reads=reads_id),
         expand("../../../mag_generate/fastp/{reads}_2_paired.fq.gz", reads=reads_id),
-        rna="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_rna_from_genomic.fna.gz",
-        cds="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_cds_from_genomic.fna.gz"
+        "../../../mag_generate/download_hum_ref/human_cds_rna_genomics.fna"
 
 rule fastp_qc:
     input: 
@@ -72,4 +71,26 @@ rule download_hum_rna:
         """
         mkdir -p {params.outdir} &&
         wget -P {params.outdir} https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_rna_from_genomic.fna.gz
+        """
+
+rule join_rna_and_cds:
+    input: 
+        cds="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_cds_from_genomic.fna.gz",
+        rna="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_rna_from_genomic.fna.gz"
+    output:
+        cds_rna_genomics="../../../mag_generate/download_hum_ref/human_cds_rna_genomics.fna",
+        rna_decompress="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_rna_from_genomic.fna",
+        cds_decompress="../../../mag_generate/download_hum_ref/GCF_000001405.40_GRCh38.p14_cds_from_genomic.fna"
+    params:
+        mem="5G"
+    threads: 8
+    conda:
+        "../../../mag_generate/envs/pigz.yml"
+    shell:
+        """
+        (pigz -d {input.cds} -p {threads} &&
+        pigz -d {input.rna} -p {threads}) &&
+        cat {output.rna_decompress} {output.cds_decompress} > {output.cds_rna_genomics} &&
+        rm {output.rna_decompress}
+        rm {output.cds_decompress}
         """
