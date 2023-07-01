@@ -15,6 +15,8 @@ conda env export --name fastp \
 conda env export --name pigz \
     --file $main_dir/envs/pigz.yml
 
+conda env export --name bwamen2 \
+    --file $main_dir/envs/.yml
 # snakmake
 #! the relative path in smk file is relative to the current working directory (i.e., pwd),
 #! not the path where the smk file is located
@@ -40,3 +42,5 @@ snakemake --cores 90 -s reads2mags.smk --use-conda
 # snakemake -s reads2mags.smk --use-conda \
 # --cluster 'qsub -q low -l ncpus={threads},mem={params.mem},walltime=48:10:00' \
 # -j 1000 --latency-wait 120
+
+
