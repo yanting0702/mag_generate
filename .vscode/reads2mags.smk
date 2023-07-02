@@ -13,9 +13,7 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/fastp/{reads}_1_paired.fq.gz", reads=reads_id),
-        expand("../../../mag_generate/fastp/{reads}_2_paired.fq.gz", reads=reads_id),
-        "../../../mag_generate/hum_ref_index/ref_done"
+        expand("../../../mag_generate/hum_cds_rna_mapped/{reads}.bam", reads=reads_id)
 
 rule fastp_qc:
     input: 
@@ -97,14 +95,32 @@ rule bwa2rm_hum_ref:
     input: 
         "../../../mag_generate/download_hum_ref/human_cds_rna_genomics.fna"
     output:
-        touch("../../../mag_generate/hum_ref_index/ref_done")
+        touch("../../../mag_generate/download_hum_ref/ref_done")
     params:
         mem="5G"
-    threads: 8
     conda:
         "../../../mag_generate/envs/bwamen2.yml"
     shell:
         """
-        bwa-mem2 index -p cds_rna_genomics {input} &&
-        mv cds_rna_genomics* ../../../mag_generate/hum_ref_index/
+        bwa-mem2 index {input}
         """
+    
+rule bwa2rm_hum_map:
+    input: 
+        paired_1="../../../mag_generate/fastp/{reads}_1_paired.fq.gz",
+        paired_2="../../../mag_generate/fastp/{reads}_2_paired.fq.gz",
+        bwa_index_done="../../../mag_generate/download_hum_ref/ref_done",
+        cds_rna="../../../mag_generate/download_hum_ref/human_cds_rna_genomics.fna"
+    output:
+        "../../../mag_generate/hum_cds_rna_mapped/{reads}.bam"
+    params:
+        mem="20G"
+    threads: 12
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    shell:
+        """
+        bwa-mem2 mem -t {threads} {input.cds_rna} {input.paired_1} {input.paired_2} | \
+        samtools view -@ {threads} -Sb > {output}
+        """
+    
