@@ -13,7 +13,7 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.sorted.bam", reads=reads_id)
+        expand("../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam.bai", reads=reads_id)
 
 rule fastp_qc:
     input: 
@@ -112,7 +112,7 @@ rule bwa2rm_hum_map:
         bwa_index_done="../../../mag_generate/download_hum_ref/ref_done",
         cds_rna="../../../mag_generate/download_hum_ref/human_cds_rna_genomics.fna"
     output:
-        "../../../mag_generate/hum_cds_rna_mapped/{reads}.bam"
+        temp("../../../mag_generate/hum_cds_rna_mapped/{reads}.bam")
     params:
         mem="20G"
     threads: 12
@@ -123,18 +123,34 @@ rule bwa2rm_hum_map:
         bwa-mem2 mem -t {threads} {input.cds_rna} {input.paired_1} {input.paired_2} | \
         samtools view -@ {threads} -Sb > {output}
         """
+
 rule samtools2sort:
     input: 
         "../../../mag_generate/hum_cds_rna_mapped/{reads}.bam"
     output:
-        "../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.sorted.bam"
+        "../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam"
     params:
-        mem="20G"
-    threads: 12
+        mem="15G"
+    threads: 8
     conda:
         "../../../mag_generate/envs/bwamen2.yml"
     shell:
         """
-        "samtools sort -@ {threads} {input} -o {output}"
+        samtools sort -@ {threads} {input} -o {output}
+        """
+
+rule samtools2index:
+    input: 
+        "../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam"
+    output:
+        "../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam.bai"
+    params:
+        mem="15G"
+    threads: 1
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    shell:
+        """
+        samtools index {input}
         """
     
