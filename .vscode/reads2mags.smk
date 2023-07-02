@@ -13,7 +13,7 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/hum_cds_rna_mapped/{reads}.bam", reads=reads_id)
+        expand("../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.sorted.bam", reads=reads_id)
 
 rule fastp_qc:
     input: 
@@ -122,5 +122,19 @@ rule bwa2rm_hum_map:
         """
         bwa-mem2 mem -t {threads} {input.cds_rna} {input.paired_1} {input.paired_2} | \
         samtools view -@ {threads} -Sb > {output}
+        """
+rule samtools2sort:
+    input: 
+        "../../../mag_generate/hum_cds_rna_mapped/{reads}.bam"
+    output:
+        "../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.sorted.bam"
+    params:
+        mem="20G"
+    threads: 12
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    shell:
+        """
+        "samtools sort -@ {threads} {input} -o {output}"
         """
     
