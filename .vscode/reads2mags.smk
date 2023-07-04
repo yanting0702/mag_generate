@@ -128,7 +128,7 @@ rule samtools2sort:
     input: 
         "../../../mag_generate/hum_cds_rna_mapped/{reads}.bam"
     output:
-        temp("../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam")
+        "../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam"
     params:
         mem="15G"
     threads: 8
