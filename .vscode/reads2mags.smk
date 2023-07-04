@@ -13,7 +13,8 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam.bai", reads=reads_id)
+        expand("../../../mag_generate/hum_cds_rna_r_filter_mapped/{reads}.bam", reads=reads_id),
+        expand("../../../mag_generate/hum_cds_rna_r_filter_unmapped/{reads}.bam", reads=reads_id)
 
 rule fastp_qc:
     input: 
@@ -124,7 +125,7 @@ rule bwa2rm_hum_map:
         samtools view -@ {threads} -Sb > {output}
         """
 
-rule samtools2sort:
+rule samtools2rm_hum_sort:
     input: 
         "../../../mag_generate/hum_cds_rna_mapped/{reads}.bam"
     output:
@@ -139,7 +140,7 @@ rule samtools2sort:
         samtools sort -@ {threads} {input} -o {output}
         """
 
-rule samtools2index:
+rule samtools2rm_hum_index:
     input: 
         "../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam"
     output:
@@ -153,4 +154,24 @@ rule samtools2index:
         """
         samtools index {input}
         """
-    
+        
+rule rscript2rm_hum_bam_aln_filter:
+    input:
+        bam="../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam",
+        bai="../../../mag_generate/hum_cds_rna_mapped_sorted/{reads}.bam.bai",
+        rscript="bam_ani_filter.r"
+    output:
+        mapped="../../../mag_generate/hum_cds_rna_r_filter_mapped/{reads}.bam",
+        unmapped="../../../mag_generate/hum_cds_rna_r_filter_unmapped/{reads}.bam"
+    threads: 12
+    params:
+        mem="10G",
+        aln_ani="0.99",
+        aln_cov="0.9",
+        aln_len="50"
+    shell:
+        """
+        {input.rscript} \
+        {input.bam} {params.aln_ani} {params.aln_cov} {params.aln_len} \
+        {output.mapped} {output.unmapped}
+        """
