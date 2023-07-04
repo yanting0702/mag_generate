@@ -7,7 +7,6 @@ snakemake_script_dir=$main_dir/../scripts/mag_generate/.vscode
 # create a folder for fastp_report
 mkdir $main_dir/fastp_report
 
-
 # produce conda enviroment information for snakemake
 conda env export --name fastp \
     --file $main_dir/envs/fastp.yml
@@ -17,7 +16,10 @@ conda env export --name pigz \
 
 conda env export --name bwamen2 \
     --file $main_dir/envs/bwamen2.yml
-    
+
+# activate r srcipt
+chmod +x $snakemake_script_dir/bam_ani_filter.r
+
 # snakmake
 #! the relative path in smk file is relative to the current working directory (i.e., pwd),
 #! not the path where the smk file is located
