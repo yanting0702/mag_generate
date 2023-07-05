@@ -248,14 +248,14 @@ rule metaspades2assembly:
         unmapped_r="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_r.fq.gz"
     output:
         touch("../../../mag_generate/spades_assembly_output/{reads}/spades_done")
-    threads: 32
+    threads: 64
     conda:
         "../../../mag_generate/envs/spades.yml"
     params:
-        mem="250g"
+        mem="550"
     shell:
         """
-        spades.py --meta --threads {threads} \
+        spades.py --meta --threads {threads} -m {params} \
         --pe1-1 {input.unmapped_f} --pe1-2 {input.unmapped_r} \
         -o {output} \
         -k 21,33,55,77,99,127
