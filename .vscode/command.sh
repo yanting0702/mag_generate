@@ -17,6 +17,9 @@ conda env export --name pigz \
 conda env export --name bwamen2 \
     --file $main_dir/envs/bwamen2.yml
 
+conda env export --name spades \
+    --file $main_dir/envs/spades.yml
+
 # activate r srcipt
 chmod +x $snakemake_script_dir/bam_ani_filter.r
 
@@ -36,7 +39,7 @@ snakemake -s reads2mags.smk --rulegraph | dot -Tpdf > $main_dir/reads2mags.pdf
 snakemake -n -s reads2mags.smk --use-conda
 
 # actual-run
-snakemake --cores 90 -s reads2mags.smk --use-conda
+snakemake --cores 120 -s reads2mags.smk --use-conda
 
 # # using cluster (faster)
 # cp $code_dir/reads2mags.smk $main_dir/snake_files
