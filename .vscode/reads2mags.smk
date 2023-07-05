@@ -13,11 +13,8 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_f.fq.gz", reads=reads_id),
-        expand("../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_r.fq.gz", reads=reads_id),
-        expand("../../../mag_generate/hum_cds_rna_mapped_seq/{reads}_f.fq.gz", reads=reads_id),
-        expand("../../../mag_generate/hum_cds_rna_mapped_seq/{reads}_r.fq.gz", reads=reads_id)      
-
+        expand("../../../mag_generate/spades_assembly_output/{reads}/spades_done", reads=reads_id)
+        
 rule fastp_qc:
     input: 
         reads_f="../../../rawdata/{reads}_1.fq.gz",
@@ -243,4 +240,23 @@ rule samtools_mapped_bam2fq:
         """
         samtools fastq -1 {output.mapped_forwards} -2 {output.mapped_reverse} \
         -@ {threads} -c {params.compress} -F 4 {input} 
+        """
+
+rule metaspades2assembly:
+    input:
+        unmapped_f="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_f.fq.gz",
+        unmapped_r="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_r.fq.gz"
+    output:
+        touch("../../../mag_generate/spades_assembly_output/{reads}/spades_done")
+    threads: 32
+    conda:
+        "../../../mag_generate/envs/spades.yml"
+    params:
+        mem="250g"
+    shell:
+        """
+        spades.py --meta --threads {threads} \
+        --pe1-1 {input.unmapped_f} --pe1-2 {input.unmapped_r} \
+        -o {output} \
+        -k 21,33,55,77,99,127
         """
