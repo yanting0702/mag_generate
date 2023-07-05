@@ -13,8 +13,10 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/hum_cds_rna_r_filter_mapped/{reads}.bam", reads=reads_id),
-        expand("../../../mag_generate/hum_cds_rna_r_filter_unmapped/{reads}.bam", reads=reads_id)
+        expand("../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_f.fq.gz", reads=reads_id),
+        expand("../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_r.fq.gz", reads=reads_id),
+        expand("../../../mag_generate/hum_cds_rna_mapped_seq/{reads}_f.fq.gz", reads=reads_id),
+        expand("../../../mag_generate/hum_cds_rna_mapped_seq/{reads}_r.fq.gz", reads=reads_id)      
 
 rule fastp_qc:
     input: 
@@ -174,4 +176,71 @@ rule rscript2rm_hum_bam_aln_filter:
         {input.rscript} \
         {input.bam} {params.aln_ani} {params.aln_cov} {params.aln_len} \
         {output.mapped} {output.unmapped}
+        """
+    
+rule samtools_unmapped_bam_sort_name:
+    input:
+        "../../../mag_generate/hum_cds_rna_r_filter_unmapped/{reads}.bam"
+    output:
+        temp("../../../mag_generate/hum_cds_rna_unmapped_sort/{reads}.bam")
+    threads: 12
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    params:
+        mem="5g"
+    shell:
+        """
+        samtools sort -n -@ {threads} {input} -o {output}
+        """
+    
+rule samtools_mapped_bam_sort_name:
+    input:
+        "../../../mag_generate/hum_cds_rna_r_filter_mapped/{reads}.bam"
+    output:
+       temp("../../../mag_generate/hum_cds_rna_mapped_sort/{reads}.bam")
+    threads: 12
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    params:
+        mem="5g"
+    shell:
+        """
+        samtools sort -n -@ {threads} {input} -o {output}
+        """
+
+#todo split bam into forward and reverse fq files
+rule samtools_unmapped_bam2fq:
+    input:
+        "../../../mag_generate/hum_cds_rna_unmapped_sort/{reads}.bam"
+    output:
+        unmapped_forwards="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_f.fq.gz",
+        unmapped_reverse="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_r.fq.gz"
+    threads: 5
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    params: 
+        mem="5g",
+        compress="6"
+    shell:
+        """
+        samtools fastq -1 {output.unmapped_forwards} -2 {output.unmapped_reverse} \
+        -@ {threads} -c {params.compress} -f 4 {input}
+        """
+
+rule samtools_mapped_bam2fq:
+    input:
+        "../../../mag_generate/hum_cds_rna_mapped_sort/{reads}.bam"
+    output:
+        mapped_forwards="../../../mag_generate/hum_cds_rna_mapped_seq/{reads}_f.fq.gz",
+        mapped_reverse="../../../mag_generate/hum_cds_rna_mapped_seq/{reads}_r.fq.gz"
+    threads: 5
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    params: 
+        mem="5g",
+        compress="6"
+    shell:
+        """
+        samtools fastq -1 {output.mapped_forwards} -2 {output.mapped_reverse} \
+        -@ {threads} -c {params.compress} -F 4 {input} 
         """
