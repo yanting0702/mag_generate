@@ -20,6 +20,9 @@ conda env export --name bwamen2 \
 conda env export --name spades \
     --file $main_dir/envs/spades.yml
 
+conda env export --name megahit \
+    --file $main_dir/envs/megahit.yml
+
 # activate r srcipt
 chmod +x $snakemake_script_dir/bam_ani_filter.r
 
