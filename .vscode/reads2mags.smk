@@ -13,7 +13,11 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/spades_assembly_output/{reads}/{reads}_assembly_done", reads=reads_id)
+        expand("../../../mag_generate/assembly_output/{reads}/assembly_done", reads=reads_id),
+        expand("../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_f.fq.gz", reads=reads_id),
+        expand("../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_r.fq.gz", reads=reads_id),
+        expand("../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_singleton.fq.gz", reads=reads_id)
+
         
 rule fastp_qc:
     input: 
@@ -206,13 +210,15 @@ rule samtools_mapped_bam_sort_name:
         """
 
 #todo split bam into forward and reverse fq files
+#todo singletone files must output before furthur assembly using megahit
 rule samtools_unmapped_bam2fq:
     input:
         "../../../mag_generate/hum_cds_rna_unmapped_sort/{reads}.bam"
     output:
-        unmapped_forwards="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_f.fq.gz",
-        unmapped_reverse="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_r.fq.gz"
-    threads: 5
+        unmapped_forwards="../../../mag_generate/hum_cds_rna_unmapped_seq_with_singletone/{reads}_f.fq.gz",
+        unmapped_reverse="../../../mag_generate/hum_cds_rna_unmapped_seq_with_singletone/{reads}_r.fq.gz",
+        singletone="../../../mag_generate/hum_cds_rna_unmapped_seq_with_singletone/{reads}_singleton.fq.gz"
+    threads: 10
     conda:
         "../../../mag_generate/envs/bwamen2.yml"
     params: 
@@ -221,16 +227,19 @@ rule samtools_unmapped_bam2fq:
     shell:
         """
         samtools fastq -1 {output.unmapped_forwards} -2 {output.unmapped_reverse} \
-        -@ {threads} -c {params.compress} -f 4 {input}
+        -s {output.singletone} \
+        -@ {threads} -c {params.compress} -f 4 {input} \
+        -s {output.singletone}
         """
 
 rule samtools_mapped_bam2fq:
     input:
         "../../../mag_generate/hum_cds_rna_mapped_sort/{reads}.bam"
     output:
-        mapped_forwards="../../../mag_generate/hum_cds_rna_mapped_seq/{reads}_f.fq.gz",
-        mapped_reverse="../../../mag_generate/hum_cds_rna_mapped_seq/{reads}_r.fq.gz"
-    threads: 5
+        mapped_forwards="../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_f.fq.gz",
+        mapped_reverse="../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_r.fq.gz",
+        singletone="../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_singleton.fq.gz"
+    threads: 10
     conda:
         "../../../mag_generate/envs/bwamen2.yml"
     params: 
@@ -238,17 +247,19 @@ rule samtools_mapped_bam2fq:
         compress="6"
     shell:
         """
-        samtools fastq -1 {output.mapped_forwards} -2 {output.mapped_reverse} \
-        -@ {threads} -c {params.compress} -F 4 {input} 
+        samtools \
+        fastq -1 {output.mapped_forwards} -2 {output.mapped_reverse} \
+        -s {output.singletone} \
+        -@ {threads} -c {params.compress} -F 4 {input}
         """
 
 rule megahit2assembly:
     input:
-        unmapped_f="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_f.fq.gz",
-        unmapped_r="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_r.fq.gz"
+        unmapped_f="../../../mag_generate/hum_cds_rna_unmapped_seq_with_singletone/{reads}_f.fq.gz",
+        unmapped_r="../../../mag_generate/hum_cds_rna_unmapped_seq_with_singletone/{reads}_r.fq.gz"
     output:
-        touch("../../../mag_generate/spades_assembly_output/{reads}/{reads}_assembly_done")
-    threads: 20
+        touch("../../../mag_generate/assembly_output/{reads}/assembly_done")
+    threads: 30
     conda:
         "../../../mag_generate/envs/megahit.yml"
     params:
