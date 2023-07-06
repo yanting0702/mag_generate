@@ -13,7 +13,7 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/spades_assembly_output/{reads}/spades_done", reads=reads_id)
+        expand("../../../mag_generate/spades_assembly_output/{reads}/{reads}_assembly_done", reads=reads_id)
         
 rule fastp_qc:
     input: 
@@ -242,21 +242,22 @@ rule samtools_mapped_bam2fq:
         -@ {threads} -c {params.compress} -F 4 {input} 
         """
 
-rule metaspades2assembly:
+rule megahit2assembly:
     input:
         unmapped_f="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_f.fq.gz",
         unmapped_r="../../../mag_generate/hum_cds_rna_unmapped_seq/{reads}_r.fq.gz"
     output:
-        touch("../../../mag_generate/spades_assembly_output/{reads}/spades_done")
-    threads: 64
+        touch("../../../mag_generate/spades_assembly_output/{reads}/{reads}_assembly_done")
+    threads: 20
     conda:
-        "../../../mag_generate/envs/spades.yml"
+        "../../../mag_generate/envs/megahit.yml"
     params:
-        mem="550"
+        mem="250g"
     shell:
         """
-        spades.py --meta --threads {threads} -m {params} \
-        --pe1-1 {input.unmapped_f} --pe1-2 {input.unmapped_r} \
+        megahit \
+        --presets meta-large \
+        -t {threads} \
+        -1 {input.unmapped_f} -2 {input.unmapped_r} \
         -o {output} \
-        -k 21,33,55,77,99,127
         """
