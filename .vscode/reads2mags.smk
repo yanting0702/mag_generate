@@ -13,7 +13,7 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/assembly_output/{reads}/assembly_done", reads=reads_id),
+        expand("../../../mag_generate/assembly_output/{reads}", reads=reads_id),
         expand("../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_f.fq.gz", reads=reads_id),
         expand("../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_r.fq.gz", reads=reads_id),
         expand("../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_singleton.fq.gz", reads=reads_id)
@@ -209,8 +209,8 @@ rule samtools_mapped_bam_sort_name:
         samtools sort -n -@ {threads} {input} -o {output}
         """
 
-#todo split bam into forward and reverse fq files
-#todo singletone files must output before furthur assembly using megahit
+#! split bam into forward and reverse fq files
+#! singletone files must output before furthur assembly using megahit
 rule samtools_unmapped_bam2fq:
     input:
         "../../../mag_generate/hum_cds_rna_unmapped_sort/{reads}.bam"
@@ -253,12 +253,13 @@ rule samtools_mapped_bam2fq:
         -@ {threads} -c {params.compress} -F 4 {input}
         """
 
+#! output should be a file. directory() need to be added if output is a directory
 rule megahit2assembly:
     input:
         unmapped_f="../../../mag_generate/hum_cds_rna_unmapped_seq_with_singletone/{reads}_f.fq.gz",
         unmapped_r="../../../mag_generate/hum_cds_rna_unmapped_seq_with_singletone/{reads}_r.fq.gz"
     output:
-        touch("../../../mag_generate/assembly_output/{reads}/assembly_done")
+        directory("../../../mag_generate/assembly_output/{reads}")
     threads: 30
     conda:
         "../../../mag_generate/envs/megahit.yml"
@@ -270,5 +271,6 @@ rule megahit2assembly:
         --presets meta-large \
         -t {threads} \
         -1 {input.unmapped_f} -2 {input.unmapped_r} \
-        -o {output} \
+        -o {output}
         """
+
