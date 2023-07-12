@@ -23,6 +23,9 @@ conda env export --name spades \
 conda env export --name megahit \
     --file $main_dir/envs/megahit.yml
 
+conda env export --name metabat2 \
+    --file $main_dir/envs/metabat2.yml
+
 # activate r srcipt
 chmod +x $snakemake_script_dir/bam_ani_filter.r
 

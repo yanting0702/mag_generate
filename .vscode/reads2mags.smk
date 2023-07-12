@@ -13,11 +13,7 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/assembly_output/{reads}", reads=reads_id),
-        expand("../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_f.fq.gz", reads=reads_id),
-        expand("../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_r.fq.gz", reads=reads_id),
-        expand("../../../mag_generate/hum_cds_rna_mapped_seq_with_singletone/{reads}_singleton.fq.gz", reads=reads_id)
-
+        expand("../../../mag_generate/contigs_mapped_sorted/{reads}.bam", reads=reads_id)
         
 rule fastp_qc:
     input: 
@@ -274,3 +270,50 @@ rule megahit2assembly:
         -o {output}
         """
 
+rule bwa2map_contigs_index:
+    input: 
+        "../../../mag_generate/assembly_output/{reads}/final.contigs.fa"
+    output:
+        touch("../../../mag_generate/assembly_output/{reads}/contigs_done")
+    params:
+        mem="5G"
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    shell:
+        """
+        bwa-mem2 index {input}
+        """
+
+rule bwa2map_contigs_map:
+    input:
+        unmapped_f="../../../mag_generate/hum_cds_rna_unmapped_seq_with_singletone/{reads}_f.fq.gz",
+        unmapped_r="../../../mag_generate/hum_cds_rna_unmapped_seq_with_singletone/{reads}_r.fq.gz",
+        bwa_index_done="../../../mag_generate/assembly_output/{reads}/contigs_done",
+        contigs="../../../mag_generate/assembly_output/{reads}/final.contigs.fa"
+    output:
+        temp("../../../mag_generate/contigs_mapped/{reads}.bam")
+    params:
+        mem="20G"
+    threads: 16
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    shell:
+        """
+        bwa-mem2 mem -t {threads} {input.contigs} {input.unmapped_f} {input.unmapped_r} | \
+        samtools view -@ {threads} -Sb > {output}
+        """
+
+rule samtools2rm_contigs_sort:
+    input: 
+        "../../../mag_generate/contigs_mapped/{reads}.bam"
+    output:
+        "../../../mag_generate/contigs_mapped_sorted/{reads}.bam"
+    params:
+        mem="15G"
+    threads: 8
+    conda:
+        "../../../mag_generate/envs/bwamen2.yml"
+    shell:
+        """
+        samtools sort -@ {threads} {input} -o {output}
+        """
