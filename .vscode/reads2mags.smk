@@ -13,7 +13,7 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/contigs_mapped_sorted/{reads}.bam", reads=reads_id)
+        expand("../../../mag_generate/contigs_depth/{reads}.depth.txt", reads=reads_id)
         
 rule fastp_qc:
     input: 
