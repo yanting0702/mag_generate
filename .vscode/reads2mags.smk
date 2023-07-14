@@ -317,3 +317,20 @@ rule samtools2rm_contigs_sort:
         """
         samtools sort -@ {threads} {input} -o {output}
         """
+
+rule metabat2contig_depth:
+    input: 
+        "../../../mag_generate/contigs_mapped_sorted/{reads}.bam"
+    output:
+        "../../../mag_generate/contigs_depth/{reads}.depth.txt"
+    params:
+        mem="5G"
+    threads: 8
+    conda:
+        "../../../mag_generate/envs/metabat2.yml"
+    shell:
+        """
+        jgi_summarize_bam_contig_depths \
+        --outputDepth {output} \
+        {input}
+        """
