@@ -13,7 +13,7 @@ reads_id, = glob_wildcards("../../../rawdata/{reads}_1.fq.gz")
 
 rule all:
     input:
-        expand("../../../mag_generate/contigs_depth/{reads}.depth.txt", reads=reads_id)
+        expand("../../../mag_generate/matebat2bins/{reads}/bin_done", reads=reads_id)
         
 rule fastp_qc:
     input: 
@@ -333,4 +333,29 @@ rule metabat2contig_depth:
         jgi_summarize_bam_contig_depths \
         --outputDepth {output} \
         {input}
+        """
+    
+rule metabat2bin:
+    input: 
+       contigs="../../../mag_generate/assembly_output/{reads}/final.contigs.fa",
+       depth="../../../mag_generate/contigs_depth/{reads}.depth.txt"
+    output:
+       touch("../../../mag_generate/matebat2bins/{reads}/bin_done")
+    params:
+        mem="10G",
+        mincontig="2000",
+        maxEdges="500",
+        out="../../../mag_generate/matebat2bins/{reads}/{reads}"
+    threads: 20
+    conda:
+        "../../../mag_generate/envs/metabat2.yml"
+    shell:
+        """
+        metabat2 \
+        -m {params.mincontig} \
+        --maxEdges {params.maxEdges} \
+        -t {threads} \
+        -i {input.contigs} \
+        -a {input.depth} \
+        -o {params.out}
         """
